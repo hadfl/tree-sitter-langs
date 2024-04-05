@@ -244,6 +244,7 @@ infrequent (grammar-only changes). It is different from the version of
     ('gnu/linux "linux")
     ('berkeley-unix "freebsd")
     ('windows-nt "windows")
+    ('usg-unix-v "illumos")
     (_ (error "Unsupported system-type %s" system-type))))
 
 (defconst tree-sitter-langs--suffixes '(".dylib" ".dll" ".so")
@@ -407,6 +408,26 @@ from the current state of the grammar repo, without cleanup."
              (:default
               (tree-sitter-langs--call
                "cc" "-shared" "-fPIC" "-g" "-O2"
+               "-I" "src"
+               "src/parser.c"
+               "-o" (format "%sbin/%s.so" tree-sitter-langs-grammar-dir lang-symbol)))))
+           ((memq system-type '(usg-unix-v))
+            (cond
+             ((file-exists-p "src/scanner.cc")
+              (tree-sitter-langs--call
+               "g++" "-shared" "-fPIC" "-fno-exceptions" "-g" "-O2"
+               "-I" "src"
+               "src/scanner.cc" "-xc" "src/parser.c"
+               "-o" (format "%sbin/%s.so" tree-sitter-langs-grammar-dir lang-symbol)))
+             ((file-exists-p "src/scanner.c")
+              (tree-sitter-langs--call
+               "gcc" "-shared" "-fPIC" "-g" "-O2"
+               "-I" "src"
+               "src/scanner.c" "src/parser.c"
+               "-o" (format "%sbin/%s.so" tree-sitter-langs-grammar-dir lang-symbol)))
+             (:default
+              (tree-sitter-langs--call
+               "gcc" "-shared" "-fPIC" "-g" "-O2"
                "-I" "src"
                "src/parser.c"
                "-o" (format "%sbin/%s.so" tree-sitter-langs-grammar-dir lang-symbol)))))
